@@ -24,7 +24,7 @@ class Certificat
 
     #[ORM\OneToOne(inversedBy: 'certificat', cascade: ['persist', 'remove'])]
     #[ORM\JoinColumn(nullable: false)]
-    private ?progression $progression = null;
+    private ?Progression $progression = null;
 
     /**
      * @var Collection<int, Notification>
@@ -71,7 +71,7 @@ class Certificat
         return $this;
     }
 
-    public function getProgression(): ?progression
+    public function getProgression(): ?Progression
     {
         return $this->progression;
     }

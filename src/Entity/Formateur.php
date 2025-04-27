@@ -19,7 +19,7 @@ class Formateur extends Utilisateur
     /**
      * @var Collection<int, evaluation>
      */
-    #[ORM\OneToMany(targetEntity: evaluation::class, mappedBy: 'formateur')]
+    #[ORM\OneToMany(targetEntity: Evaluation::class, mappedBy: 'formateur')]
     private Collection $evaluation;
 
     public function __construct()
@@ -71,7 +71,7 @@ class Formateur extends Utilisateur
         return $this->evaluation;
     }
 
-    public function addEvaluation(evaluation $evaluation): static
+    public function addEvaluation(Evaluation $evaluation): static
     {
         if (!$this->evaluation->contains($evaluation)) {
             $this->evaluation->add($evaluation);
@@ -81,7 +81,7 @@ class Formateur extends Utilisateur
         return $this;
     }
 
-    public function removeEvaluation(evaluation $evaluation): static
+    public function removeEvaluation(Evaluation $evaluation): static
     {
         if ($this->evaluation->removeElement($evaluation)) {
             // set the owning side to null (unless already changed)

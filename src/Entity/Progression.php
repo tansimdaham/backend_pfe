@@ -26,7 +26,7 @@ class Progression
 
     #[ORM\ManyToOne(inversedBy: 'progressions')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?evaluation $evaluation = null;
+    private ?Evaluation $evaluation = null;
 
     public function getId(): ?int
     {
@@ -74,12 +74,12 @@ class Progression
         return $this;
     }
 
-    public function getEvaluation(): ?evaluation
+    public function getEvaluation(): ?Evaluation
     {
         return $this->evaluation;
     }
 
-    public function setEvaluation(?evaluation $evaluation): static
+    public function setEvaluation(?Evaluation $evaluation): static
     {
         $this->evaluation = $evaluation;
 
