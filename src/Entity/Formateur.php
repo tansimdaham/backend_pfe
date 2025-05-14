@@ -92,4 +92,13 @@ class Formateur extends Utilisateur
 
         return $this;
     }
+
+    /**
+     * Returns the Formateur instance as a Utilisateur
+     * This method is needed for compatibility with code that expects a getUtilisateur method
+     */
+    public function getUtilisateur(): Utilisateur
+    {
+        return $this;
+    }
 }

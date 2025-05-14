@@ -1,5 +1,7 @@
 <?php
 
+// Les en-têtes CORS sont gérés par nelmio/cors-bundle
+
 use App\Kernel;
 
 require_once dirname(__DIR__).'/vendor/autoload_runtime.php';

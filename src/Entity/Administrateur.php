@@ -6,6 +6,7 @@ use App\Repository\AdministrateurRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: AdministrateurRepository::class)]
 class Administrateur extends Utilisateur
@@ -28,11 +29,19 @@ class Administrateur extends Utilisateur
     #[ORM\ManyToMany(targetEntity: apprenant::class, inversedBy: 'administrateurs')]
     private Collection $apprenant;
 
+    /**
+     * @var Collection<int, Evenement>
+     */
+    #[ORM\ManyToMany(targetEntity: Evenement::class, mappedBy: 'administrateurs')]
+    #[Groups(['administrateur:read'])]
+    private Collection $evenements;
+
     public function __construct()
     {
         $this->Reclamation = new ArrayCollection();
         $this->cours = new ArrayCollection();
         $this->apprenant = new ArrayCollection();
+        $this->evenements = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -115,6 +124,42 @@ class Administrateur extends Utilisateur
     {
         $this->apprenant->removeElement($apprenant);
 
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Evenement>
+     */
+    public function getEvenements(): Collection
+    {
+        return $this->evenements;
+    }
+
+    public function addEvenement(Evenement $evenement): static
+    {
+        if (!$this->evenements->contains($evenement)) {
+            $this->evenements->add($evenement);
+            $evenement->addAdministrateur($this);
+        }
+
+        return $this;
+    }
+
+    public function removeEvenement(Evenement $evenement): static
+    {
+        if ($this->evenements->removeElement($evenement)) {
+            $evenement->removeAdministrateur($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Returns the Administrateur instance as a Utilisateur
+     * This method is needed for compatibility with code that expects a getUtilisateur method
+     */
+    public function getUtilisateur(): Utilisateur
+    {
         return $this;
     }
 }

@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: MessagerieRepository::class)]
 class Messagerie
@@ -14,24 +15,37 @@ class Messagerie
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['messagerie:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['messagerie:read'])]
     private ?string $message = null;
 
     #[ORM\Column]
+    #[Groups(['messagerie:read'])]
     private ?bool $lu = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Groups(['messagerie:read'])]
     private ?\DateTimeInterface $date = null;
 
     #[ORM\ManyToOne(inversedBy: 'messenger')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['messagerie:read'])]
     private ?Formateur $formateur = null;
 
     #[ORM\ManyToOne(inversedBy: 'Messagerie')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['messagerie:read'])]
     private ?Apprenant $apprenant = null;
+
+    /**
+     * Indique si le message a été envoyé par le formateur (true) ou par l'apprenant (false)
+     */
+    #[ORM\Column(type: "boolean")]
+    #[Groups(['messagerie:read'])]
+    private bool $sentByFormateur = false;
 
     /**
      * @var Collection<int, Notification>
@@ -105,6 +119,18 @@ class Messagerie
     public function setApprenant(?Apprenant $apprenant): static
     {
         $this->apprenant = $apprenant;
+
+        return $this;
+    }
+
+    public function isSentByFormateur(): bool
+    {
+        return $this->sentByFormateur;
+    }
+
+    public function setSentByFormateur(bool $sentByFormateur): static
+    {
+        $this->sentByFormateur = $sentByFormateur;
 
         return $this;
     }

@@ -1,0 +1,289 @@
+api_login:
+  path: /api/login
+  methods: ["POST"]
+  controller: App\Controller\AuthController::login
+
+api_register:
+  path: /api/register
+  methods: ["POST"]
+  controller: App\Controller\AuthController::register
+
+api_logout:
+  path: /api/logout
+  methods: ["POST"]
+  controller: App\Controller\AuthController::logout
+
+api_user_me:
+  path: /api/user/me
+  methods: ["GET"]
+  controller: App\Controller\AuthController::getCurrentUser
+
+api_user_update:
+  path: /api/user/{id}
+  methods: ["PUT"]
+  controller: App\Controller\AuthController::updateUser
+
+api_admin_users:
+  path: /api/admin/users
+  methods: ["GET"]
+  controller: App\Controller\AdminController::getApprovedUsers
+
+api_admin_apprenants:
+  path: /api/admin/apprenants
+  methods: ["GET"]
+  controller: App\Controller\AdminController::getApprenants
+
+api_admin_apprenant_cours:
+  path: /api/admin/apprenants/{id}/cours
+  methods: ["GET"]
+  controller: App\Controller\AdminController::getApprenantCours
+
+api_admin_apprenant_assign_cours:
+  path: /api/admin/apprenants/{apprenantId}/cours/{coursId}
+  methods: ["POST"]
+  controller: App\Controller\AdminController::assignCourseToApprenant
+
+api_admin_apprenant_remove_cours:
+  path: /api/admin/apprenants/{apprenantId}/cours/{coursId}
+  methods: ["DELETE"]
+  controller: App\Controller\AdminController::removeCourseFromApprenant
+
+api_admin_users_pending:
+  path: /api/admin/users/pending
+  methods: ["GET"]
+  controller: App\Controller\AdminController::getPendingUsers
+
+api_admin_user_add:
+  path: /api/admin/users/add
+  methods: ["POST"]
+  controller: App\Controller\AdminController::addUser
+
+api_admin_user_edit:
+  path: /api/admin/users/edit/{id}
+  methods: ["PUT"]
+  controller: App\Controller\AdminController::editUser
+
+api_admin_user_delete:
+  path: /api/admin/users/delete/{id}
+  methods: ["DELETE"]
+  controller: App\Controller\AdminController::deleteUser
+
+api_admin_user_approve:
+  path: /api/admin/users/approve/{id}
+  methods: ["POST"]
+  controller: App\Controller\AdminController::approveUser
+
+api_admin_user_reject:
+  path: /api/admin/users/reject/{id}
+  methods: ["POST"]
+  controller: App\Controller\AdminController::rejectUser
+
+# Reclamation routes
+api_reclamation_list:
+  path: /api/reclamation
+  methods: ["GET"]
+  controller: App\Controller\ReclamationController::list
+
+api_reclamation_user:
+  path: /api/reclamation/user
+  methods: ["GET"]
+  controller: App\Controller\ReclamationController::getUserReclamations
+
+api_reclamation_show:
+  path: /api/reclamation/{id}
+  methods: ["GET"]
+  controller: App\Controller\ReclamationController::show
+
+api_reclamation_create:
+  path: /api/reclamation
+  methods: ["POST"]
+  controller: App\Controller\ReclamationController::create
+
+api_reclamation_reply:
+  path: /api/reclamation/{id}/reply
+  methods: ["POST"]
+  controller: App\Controller\ReclamationController::reply
+
+# Formateur routes
+api_formateur_apprenants:
+  path: /api/formateur/apprenants
+  methods: ["GET"]
+  controller: App\Controller\FormateurController::getApprenants
+
+api_formateur_apprenant:
+  path: /api/formateur/apprenants/{id}
+  methods: ["GET"]
+  controller: App\Controller\FormateurController::getApprenant
+
+api_formateur_apprenant_cours:
+  path: /api/formateur/apprenants/{id}/cours
+  methods: ["GET"]
+  controller: App\Controller\FormateurController::getApprenantCours
+
+api_formateur_cours:
+  path: /api/formateur/cours
+  methods: ["GET"]
+  controller: App\Controller\FormateurController::getCours
+
+# Evaluation routes
+api_evaluation_list:
+  path: /api/evaluation
+  methods: ["GET"]
+  controller: App\Controller\EvaluationController::list
+
+api_evaluation_show:
+  path: /api/evaluation/{id}
+  methods: ["GET"]
+  controller: App\Controller\EvaluationController::show
+
+api_evaluation_create:
+  path: /api/evaluation
+  methods: ["POST"]
+  controller: App\Controller\EvaluationController::create
+
+api_evaluation_by_quiz_apprenant:
+  path: /api/evaluation/quiz/{quizId}/apprenant/{apprenantId}
+  methods: ["GET"]
+  controller: App\Controller\EvaluationController::getEvaluationByQuizAndApprenant
+
+# Evaluation Detail routes
+api_evaluation_detail_create:
+  path: /api/evaluation-detail
+  methods: ["POST"]
+  controller: App\Controller\EvaluationDetailController::create
+
+api_evaluation_detail_by_quiz_apprenant:
+  path: /api/evaluation-detail/quiz/{quizId}/apprenant/{apprenantId}
+  methods: ["GET"]
+  controller: App\Controller\EvaluationDetailController::getByQuizAndApprenant
+
+# Progression routes
+api_progression_list:
+  path: /api/progression
+  methods: ["GET"]
+  controller: App\Controller\ProgressionController::list
+
+api_progression_show:
+  path: /api/progression/{id}
+  methods: ["GET"]
+  controller: App\Controller\ProgressionController::show
+
+api_progression_by_apprenant:
+  path: /api/progression/apprenant/{apprenantId}
+  methods: ["GET"]
+  controller: App\Controller\ProgressionController::getProgressionByApprenant
+
+api_progression_by_apprenant_cours:
+  path: /api/progression/apprenant/{apprenantId}/cours/{coursId}
+  methods: ["GET"]
+  controller: App\Controller\ProgressionController::getProgressionByApprenantAndCours
+
+# Certificat routes
+api_certificat_list:
+  path: /api/certificat
+  methods: ["GET"]
+  controller: App\Controller\CertificatController::list
+
+api_certificat_show:
+  path: /api/certificat/{id}
+  methods: ["GET"]
+  controller: App\Controller\CertificatController::show
+
+api_certificat_generate:
+  path: /api/certificat/generate
+  methods: ["POST"]
+  controller: App\Controller\CertificatController::generate
+
+api_certificat_by_apprenant:
+  path: /api/certificat/apprenant/{apprenantId}
+  methods: ["GET"]
+  controller: App\Controller\CertificatController::getCertificatsByApprenant
+
+api_certificat_by_apprenant_and_cours:
+  path: /api/certificat/apprenant/{apprenantId}/cours/{coursId}
+  methods: ["GET"]
+  controller: App\Controller\CertificatController::getCertificatByApprenantAndCours
+
+api_certificat_download:
+  path: /api/certificat/{id}/download
+  methods: ["GET"]
+  controller: App\Controller\CertificatController::download
+
+# Apprenant routes
+api_apprenant_cours:
+  path: /api/apprenant/cours
+  methods: ["GET"]
+  controller: App\Controller\ApprenantController::getMesCours
+
+# Messagerie routes
+api_messagerie_get_conversation:
+  path: /api/messagerie/formateur/{formateurId}/apprenant/{apprenantId}
+  methods: ["GET"]
+  controller: App\Controller\MessagerieController::getConversation
+
+api_messagerie_formateur_conversations:
+  path: /api/messagerie/formateur/{formateurId}/conversations
+  methods: ["GET"]
+  controller: App\Controller\MessagerieController::getFormateurConversations
+
+api_messagerie_apprenant_conversations:
+  path: /api/messagerie/apprenant/{apprenantId}/conversations
+  methods: ["GET"]
+  controller: App\Controller\MessagerieController::getApprenantConversations
+
+api_messagerie_formateur_envoyer:
+  path: /api/messagerie/formateur/{formateurId}/apprenant/{apprenantId}/envoyer
+  methods: ["POST"]
+  controller: App\Controller\MessagerieController::formateurEnvoyerMessage
+
+api_messagerie_apprenant_envoyer:
+  path: /api/messagerie/apprenant/{apprenantId}/formateur/{formateurId}/envoyer
+  methods: ["POST"]
+  controller: App\Controller\MessagerieController::apprenantEnvoyerMessage
+
+api_messagerie_marquer_lu:
+  path: /api/messagerie/{id}/marquer-lu
+  methods: ["PUT"]
+  controller: App\Controller\MessagerieController::marquerLu
+
+api_messagerie_formateur_apprenants:
+  path: /api/messagerie/formateur/{formateurId}/apprenants
+  methods: ["GET"]
+  controller: App\Controller\MessagerieController::getApprenantsForFormateur
+
+api_messagerie_apprenant_formateurs:
+  path: /api/messagerie/apprenant/{apprenantId}/formateurs
+  methods: ["GET"]
+  controller: App\Controller\MessagerieController::getFormateursForApprenant
+
+# Notification routes
+api_notification_list:
+  path: /api/notification
+  methods: ["GET"]
+  controller: App\Controller\NotificationController::getUserNotifications
+
+api_notification_mark_read:
+  path: /api/notification/{id}/read
+  methods: ["PUT"]
+  controller: App\Controller\NotificationController::markAsRead
+
+api_notification_mark_all_read:
+  path: /api/notification/mark-all-read
+  methods: ["PUT"]
+  controller: App\Controller\NotificationController::markAllAsRead
+
+api_notification_delete:
+  path: /api/notification/{id}
+  methods: ["DELETE"]
+  controller: App\Controller\NotificationController::deleteNotification
+
+# Dashboard routes
+api_dashboard_stats:
+  path: /api/dashboard/stats
+  methods: ["GET"]
+  controller: App\Controller\DashboardController::getStats
+
+api_dashboard_formateur_stats:
+  path: /api/dashboard/formateur/stats
+  methods: ["GET"]
+  controller: App\Controller\DashboardController::getFormateurStats

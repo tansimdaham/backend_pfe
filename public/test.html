@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test du serveur Symfony</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #4a6baf;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .info {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test du serveur Symfony</h1>
+    
+    <p class="success">Si vous voyez cette page, cela signifie que le serveur web fonctionne correctement pour les fichiers statiques.</p>
+    
+    <div class="info">
+        <h2>Prochaines étapes:</h2>
+        <ol>
+            <li>Essayez d'accéder à <a href="/api">/api</a> pour tester l'API.</li>
+            <li>Vérifiez les logs d'erreur dans le répertoire var/log.</li>
+            <li>Assurez-vous que le fichier index.php est correctement configuré.</li>
+        </ol>
+    </div>
+    
+    <p>Date et heure du test: <script>document.write(new Date().toLocaleString())</script></p>
+</body>
+</html>

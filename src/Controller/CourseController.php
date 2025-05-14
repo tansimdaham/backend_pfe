@@ -29,7 +29,7 @@ class CourseController extends AbstractController
     public function create(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        
+
         $cours = new Cours();
         $cours->setTitre($data['titre'] ?? '');
         $cours->setDescription($data['description'] ?? '');
@@ -43,11 +43,34 @@ class CourseController extends AbstractController
     #[Route('/{id}', name: 'api_cours_show', methods: ['GET'])]
     public function show(int $id): JsonResponse
     {
+        error_log("CourseController::show - Request received for course ID: " . $id);
+
         $cours = $this->coursRepository->find($id);
         if (!$cours) {
+            error_log("CourseController::show - Course not found with ID: " . $id);
             return $this->json(['error' => 'Cours non trouvé'], 404);
         }
-        return $this->json($cours, 200, [], ['groups' => 'cours:read']);
+
+        error_log("CourseController::show - Course found: " . $cours->getTitre());
+
+        // Log the number of quizzes associated with this course
+        $quizzes = $cours->getQuizzes();
+        error_log("CourseController::show - Course has " . count($quizzes) . " quizzes");
+
+        // Log the first quiz for debugging if available
+        if (count($quizzes) > 0) {
+            $firstQuiz = $quizzes->first();
+            if ($firstQuiz) {
+                error_log("CourseController::show - First quiz: ID=" . $firstQuiz->getId() .
+                          ", IDModule=" . $firstQuiz->getIDModule() .
+                          ", Nom_FR=" . $firstQuiz->getNomFR());
+            }
+        }
+
+        // Ensure we're returning a properly formatted response
+        $response = $this->json($cours, 200, [], ['groups' => 'cours:read']);
+        error_log("CourseController::show - Response prepared with status 200");
+        return $response;
     }
 
     #[Route('/{id}', name: 'api_cours_update', methods: ['PUT'])]

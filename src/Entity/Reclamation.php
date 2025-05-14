@@ -5,7 +5,9 @@ namespace App\Entity;
 use App\Repository\ReclamationRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ReclamationRepository::class)]
 class Reclamation
@@ -13,33 +15,41 @@ class Reclamation
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['reclamation:read'])]
     private ?int $id = null;
 
-    #[ORM\Column(length: 50)]
-    private ?string $name = null;
-
-    #[ORM\Column(length: 50)]
-    private ?string $email = null;
-
-    #[ORM\Column(length: 50)]
-    private ?string $phone = null;
-
     #[ORM\Column(length: 255)]
-    private ?string $profileImage = null;
+    #[Groups(['reclamation:read'])]
+    private ?string $subject = null;
+
+    #[ORM\Column(type: Types::TEXT)]
+    #[Groups(['reclamation:read'])]
+    private ?string $message = null;
 
     #[ORM\Column(length: 50)]
-    private ?string $currentPassword = null;
+    #[Groups(['reclamation:read'])]
+    private ?string $status = null;
 
-    #[ORM\Column(length: 50)]
-    private ?string $newPassword = null;
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Groups(['reclamation:read'])]
+    private ?\DateTimeInterface $date = null;
 
-    #[ORM\ManyToOne(inversedBy: 'Reclamation')]
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['reclamation:read'])]
+    private ?string $response = null;
+
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    #[Groups(['reclamation:read'])]
+    private ?array $responses = [];
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    #[Groups(['reclamation:read'])]
+    private ?\DateTimeInterface $responseDate = null;
+
+    #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
-    private ?Administrateur $administrateur = null;
-
-    #[ORM\ManyToOne(inversedBy: 'Reclamation')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Apprenant $apprenant = null;
+    #[Groups(['reclamation:read'])]
+    private ?Utilisateur $user = null;
 
     /**
      * @var Collection<int, Notification>
@@ -57,98 +67,113 @@ class Reclamation
         return $this->id;
     }
 
-    public function getName(): ?string
+    public function getSubject(): ?string
     {
-        return $this->name;
+        return $this->subject;
     }
 
-    public function setName(string $name): static
+    public function setSubject(string $subject): static
     {
-        $this->name = $name;
+        $this->subject = $subject;
 
         return $this;
     }
 
-    public function getEmail(): ?string
+    public function getMessage(): ?string
     {
-        return $this->email;
+        return $this->message;
     }
 
-    public function setEmail(string $email): static
+    public function setMessage(string $message): static
     {
-        $this->email = $email;
+        $this->message = $message;
 
         return $this;
     }
 
-    public function getPhone(): ?string
+    public function getStatus(): ?string
     {
-        return $this->phone;
+        return $this->status;
     }
 
-    public function setPhone(string $phone): static
+    public function setStatus(string $status): static
     {
-        $this->phone = $phone;
+        $this->status = $status;
 
         return $this;
     }
 
-    public function getProfileImage(): ?string
+    public function getDate(): ?\DateTimeInterface
     {
-        return $this->profileImage;
+        return $this->date;
     }
 
-    public function setProfileImage(string $profileImage): static
+    public function setDate(\DateTimeInterface $date): static
     {
-        $this->profileImage = $profileImage;
+        $this->date = $date;
 
         return $this;
     }
 
-    public function getCurrentPassword(): ?string
+    public function getResponse(): ?string
     {
-        return $this->currentPassword;
+        return $this->response;
     }
 
-    public function setCurrentPassword(string $currentPassword): static
+    public function setResponse(?string $response): static
     {
-        $this->currentPassword = $currentPassword;
+        $this->response = $response;
 
         return $this;
     }
 
-    public function getNewPassword(): ?string
+    public function getResponses(): ?array
     {
-        return $this->newPassword;
+        return $this->responses;
     }
 
-    public function setNewPassword(string $newPassword): static
+    public function setResponses(?array $responses): static
     {
-        $this->newPassword = $newPassword;
+        $this->responses = $responses;
 
         return $this;
     }
 
-    public function getAdministrateur(): ?Administrateur
+    public function addResponse(string $response, string $senderName, \DateTime $date): static
     {
-        return $this->administrateur;
-    }
+        if ($this->responses === null) {
+            $this->responses = [];
+        }
 
-    public function setAdministrateur(?Administrateur $administrateur): static
-    {
-        $this->administrateur = $administrateur;
+        $this->responses[] = [
+            'content' => $response,
+            'sender' => $senderName,
+            'date' => $date->format('Y-m-d H:i:s')
+        ];
 
         return $this;
     }
 
-    public function getApprenant(): ?Apprenant
+    public function getResponseDate(): ?\DateTimeInterface
     {
-        return $this->apprenant;
+        return $this->responseDate;
     }
 
-    public function setApprenant(?Apprenant $apprenant): static
+    public function setResponseDate(?\DateTimeInterface $responseDate): static
     {
-        $this->apprenant = $apprenant;
+        $this->responseDate = $responseDate;
+
+        return $this;
+    }
+
+    public function getUser(): ?Utilisateur
+    {
+        return $this->user;
+    }
+
+    public function setUser(?Utilisateur $user): static
+    {
+        $this->user = $user;
 
         return $this;
     }

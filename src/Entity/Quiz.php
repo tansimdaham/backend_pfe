@@ -6,6 +6,7 @@ use App\Repository\QuizRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: QuizRepository::class)]
 class Quiz
@@ -13,73 +14,52 @@ class Quiz
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['quiz:read', 'competence:read', 'action:read'])]
     private ?int $id = null;
 
-    #[ORM\Column(length: 50)]
-    private ?string $IDModule;
+    #[ORM\Column(name: 'idmodule', type: 'string', length: 50, unique: true)]
+    #[Groups(['quiz:read', 'competence:read', 'action:read'])]
+    private ?string $IDModule = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(['quiz:read', 'competence:read', 'action:read'])]
     private ?string $Category = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(['quiz:read', 'competence:read', 'action:read'])]
     private ?string $Type = null;
 
     #[ORM\Column(type: 'boolean')]
+    #[Groups(['quiz:read', 'competence:read', 'action:read'])]
     private bool $MainSurface = false;
 
     #[ORM\Column]
+    #[Groups(['quiz:read', 'competence:read', 'action:read'])]
     private ?int $Surface = 0;
 
     #[ORM\Column]
+    #[Groups(['quiz:read', 'competence:read', 'action:read'])]
     private ?int $Main = 0;
 
     #[ORM\Column(length: 250)]
+    #[Groups(['quiz:read', 'competence:read', 'action:read'])]
     private ?string $Nom_FR = null;
 
     #[ORM\Column(length: 250)]
+    #[Groups(['quiz:read', 'competence:read', 'action:read'])]
     private ?string $Nom_EN = null;
 
     #[ORM\Column(length: 250, nullable: true)]
+    #[Groups(['quiz:read'])]
     private ?string $PointFort_FR = null;
 
     #[ORM\Column(length: 250, nullable: true)]
+    #[Groups(['quiz:read'])]
     private ?string $PointFort_EN = null;
-
-    #[ORM\Column]
-    private ?int $Competence_ID = null;
-
-    #[ORM\Column(length: 250)]
-    private ?string $Comp_Categorie_FR = null;
-
-    #[ORM\Column(length: 250)]
-    private ?string $Comp_Categorie_EN = null;
-
-    #[ORM\Column(length: 250)]
-    private ?string $Competence_Nom_FR = null;
-
-    #[ORM\Column(length: 250)]
-    private ?string $Competence_Nom_EN = null;
-
-    #[ORM\Column(length: 250)]
-    private ?string $SousCompetence_Nom_FR = null;
-
-    #[ORM\Column(length: 255)]
-    private ?string $SousCompetence_Nom_EN = null;
-
-    #[ORM\Column(length: 250, nullable: true)]
-    private ?string $Action_Nom_FR = null;
-
-    #[ORM\Column(length: 250, nullable: true)]
-    private ?string $Action_Nom_EN = null;
-
-    #[ORM\Column(length: 250, nullable: true)]
-    private ?string $Action_Categorie_FR = null;
-
-    #[ORM\Column(length: 250, nullable: true)]
-    private ?string $Action_Categorie_EN = null;
 
     #[ORM\ManyToOne(inversedBy: 'quizzes')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['quiz:read'])]
     private ?Cours $cours = null;
 
     /**
@@ -88,9 +68,25 @@ class Quiz
     #[ORM\OneToMany(targetEntity: Evaluation::class, mappedBy: 'quiz')]
     private Collection $Evaluation;
 
+    /**
+     * @var Collection<int, Competence>
+     */
+    #[ORM\OneToMany(targetEntity: Competence::class, mappedBy: 'quiz', cascade: ['persist', 'remove'])]
+    #[Groups(['quiz:read'])]
+    private Collection $competences;
+
+    /**
+     * @var Collection<int, Action>
+     */
+    #[ORM\OneToMany(targetEntity: Action::class, mappedBy: 'quiz', cascade: ['persist', 'remove'])]
+    #[Groups(['quiz:read'])]
+    private Collection $actions;
+
     public function __construct()
     {
         $this->Evaluation = new ArrayCollection();
+        $this->competences = new ArrayCollection();
+        $this->actions = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -104,13 +100,14 @@ class Quiz
     }
 
     public function setIDModule(string $IDModule): static
-{
-    if (empty($IDModule)) {
-        throw new \InvalidArgumentException("IDModule cannot be empty");
+    {
+        if (empty($IDModule)) {
+            throw new \InvalidArgumentException("IDModule cannot be empty");
+        }
+
+        $this->IDModule = $IDModule;
+        return $this;
     }
-    $this->IDModule = $IDModule;
-    return $this;
-}
 
     public function getCategory(): ?string
     {
@@ -211,130 +208,7 @@ class Quiz
         return $this;
     }
 
-    public function getCompetenceID(): ?int
-    {
-        return $this->Competence_ID;
-    }
-
-    public function setCompetenceID($Competence_ID): static
-    {
-        // Convertir en entier si c'est une chaîne
-        if (is_string($Competence_ID)) {
-            $Competence_ID = (int)$Competence_ID;
-        }
-        $this->Competence_ID = $Competence_ID;
-        return $this;
-    }
-
-    public function getCompCategorieFR(): ?string
-    {
-        return $this->Comp_Categorie_FR;
-    }
-
-    public function setCompCategorieFR(string $Comp_Categorie_FR): static
-    {
-        $this->Comp_Categorie_FR = $Comp_Categorie_FR;
-        return $this;
-    }
-
-    public function getCompCategorieEN(): ?string
-    {
-        return $this->Comp_Categorie_EN;
-    }
-
-    public function setCompCategorieEN(string $Comp_Categorie_EN): static
-    {
-        $this->Comp_Categorie_EN = $Comp_Categorie_EN;
-        return $this;
-    }
-
-    public function getCompetenceNomFR(): ?string
-    {
-        return $this->Competence_Nom_FR;
-    }
-
-    public function setCompetenceNomFR(string $Competence_Nom_FR): static
-    {
-        $this->Competence_Nom_FR = $Competence_Nom_FR;
-        return $this;
-    }
-
-    public function getCompetenceNomEN(): ?string
-    {
-        return $this->Competence_Nom_EN;
-    }
-
-    public function setCompetenceNomEN(string $Competence_Nom_EN): static
-    {
-        $this->Competence_Nom_EN = $Competence_Nom_EN;
-        return $this;
-    }
-
-    public function getSousCompetenceNomFR(): ?string
-    {
-        return $this->SousCompetence_Nom_FR;
-    }
-
-    public function setSousCompetenceNomFR(string $SousCompetence_Nom_FR): static
-    {
-        $this->SousCompetence_Nom_FR = $SousCompetence_Nom_FR;
-        return $this;
-    }
-
-    public function getSousCompetenceNomEN(): ?string
-    {
-        return $this->SousCompetence_Nom_EN;
-    }
-
-    public function setSousCompetenceNomEN(string $SousCompetence_Nom_EN): static
-    {
-        $this->SousCompetence_Nom_EN = $SousCompetence_Nom_EN;
-        return $this;
-    }
-
-    public function getActionNomFR(): ?string
-    {
-        return $this->Action_Nom_FR;
-    }
-
-    public function setActionNomFR(?string $Action_Nom_FR): static
-    {
-        $this->Action_Nom_FR = $Action_Nom_FR;
-        return $this;
-    }
-
-    public function getActionNomEN(): ?string
-    {
-        return $this->Action_Nom_EN;
-    }
-
-    public function setActionNomEN(?string $Action_Nom_EN): static
-    {
-        $this->Action_Nom_EN = $Action_Nom_EN;
-        return $this;
-    }
-
-    public function getActionCategorieFR(): ?string
-    {
-        return $this->Action_Categorie_FR;
-    }
-
-    public function setActionCategorieFR(?string $Action_Categorie_FR): static
-    {
-        $this->Action_Categorie_FR = $Action_Categorie_FR;
-        return $this;
-    }
-
-    public function getActionCategorieEN(): ?string
-    {
-        return $this->Action_Categorie_EN;
-    }
-
-    public function setActionCategorieEN(?string $Action_Categorie_EN): static
-    {
-        $this->Action_Categorie_EN = $Action_Categorie_EN;
-        return $this;
-    }
+    // Méthodes supprimées - utiliser idmodule à la place
 
     public function getCours(): ?Cours
     {
@@ -371,6 +245,66 @@ class Quiz
             // set the owning side to null (unless already changed)
             if ($evaluation->getQuiz() === $this) {
                 $evaluation->setQuiz(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Competence>
+     */
+    public function getCompetences(): Collection
+    {
+        return $this->competences;
+    }
+
+    public function addCompetence(Competence $competence): static
+    {
+        if (!$this->competences->contains($competence)) {
+            $this->competences->add($competence);
+            $competence->setQuiz($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCompetence(Competence $competence): static
+    {
+        if ($this->competences->removeElement($competence)) {
+            // set the owning side to null (unless already changed)
+            if ($competence->getQuiz() === $this) {
+                $competence->setQuiz(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Action>
+     */
+    public function getActions(): Collection
+    {
+        return $this->actions;
+    }
+
+    public function addAction(Action $action): static
+    {
+        if (!$this->actions->contains($action)) {
+            $this->actions->add($action);
+            $action->setQuiz($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAction(Action $action): static
+    {
+        if ($this->actions->removeElement($action)) {
+            // set the owning side to null (unless already changed)
+            if ($action->getQuiz() === $this) {
+                $action->setQuiz(null);
             }
         }
 

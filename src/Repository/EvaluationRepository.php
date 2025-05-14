@@ -16,28 +16,38 @@ class EvaluationRepository extends ServiceEntityRepository
         parent::__construct($registry, Evaluation::class);
     }
 
-//    /**
-//     * @return Evaluation[] Returns an array of Evaluation objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('e')
-//            ->andWhere('e.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('e.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+   /**
+     * Trouve les évaluations par idmodule
+     * @param string $idmodule - L'identifiant du module
+     * @return Evaluation[] Returns an array of Evaluation objects
+     */
+    public function findByIdmodule(string $idmodule): array
+    {
+        return $this->createQueryBuilder('e')
+            ->andWhere('e.idmodule = :idmodule')
+            ->setParameter('idmodule', $idmodule)
+            ->orderBy('e.id', 'ASC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
 
-//    public function findOneBySomeField($value): ?Evaluation
-//    {
-//        return $this->createQueryBuilder('e')
-//            ->andWhere('e.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+    /**
+     * Trouve une évaluation par idmodule et apprenant
+     * @param string $idmodule - L'identifiant du module
+     * @param int $apprenantId - L'ID de l'apprenant
+     * @return Evaluation|null
+     */
+    public function findOneByIdmoduleAndApprenant(string $idmodule, int $apprenantId): ?Evaluation
+    {
+        // Maintenant nous pouvons utiliser directement la relation avec l'apprenant
+        return $this->createQueryBuilder('e')
+            ->andWhere('e.idmodule = :idmodule')
+            ->andWhere('e.apprenant = :apprenantId')
+            ->setParameter('idmodule', $idmodule)
+            ->setParameter('apprenantId', $apprenantId)
+            ->getQuery()
+            ->getOneOrNullResult()
+        ;
+    }
 }

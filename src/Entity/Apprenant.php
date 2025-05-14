@@ -29,14 +29,13 @@ class Apprenant extends Utilisateur
     private Collection $Messagerie;
 
     /**
-     * @var Collection<int, cours>
+     * @var Collection<int, Cours>
      */
-    #[ORM\ManyToMany(targetEntity: cours::class, inversedBy: 'apprenants')]
+    #[ORM\ManyToMany(targetEntity: Cours::class, inversedBy: 'apprenants')]
     private Collection $cours;
 
-    #[ORM\OneToOne(inversedBy: 'apprenant', cascade: ['persist', 'remove'])]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?certificat $certificta = null;
+    // Removed OneToOne relationship with Certificat
+    // Now Certificat is the owning side with a ManyToOne relationship
 
     public function __construct()
     {
@@ -139,14 +138,14 @@ class Apprenant extends Utilisateur
     }
 
     /**
-     * @return Collection<int, cours>
+     * @return Collection<int, Cours>
      */
     public function getCours(): Collection
     {
         return $this->cours;
     }
 
-    public function addCour(cours $cour): static
+    public function addCour(Cours $cour): static
     {
         if (!$this->cours->contains($cour)) {
             $this->cours->add($cour);
@@ -155,22 +154,22 @@ class Apprenant extends Utilisateur
         return $this;
     }
 
-    public function removeCour(cours $cour): static
+    public function removeCour(Cours $cour): static
     {
         $this->cours->removeElement($cour);
 
         return $this;
     }
 
-    public function getCertificta(): ?certificat
-    {
-        return $this->certificta;
-    }
+    // Removed getCertificat and setCertificat methods
+    // Now Certificat is the owning side with a ManyToOne relationship
 
-    public function setCertificta(certificat $certificta): static
+    /**
+     * Returns the Apprenant instance as a Utilisateur
+     * This method is needed for compatibility with code that expects a getUtilisateur method
+     */
+    public function getUtilisateur(): Utilisateur
     {
-        $this->certificta = $certificta;
-
         return $this;
     }
 }

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PharmaLearn API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #f8f9fa;
+        }
+        h1 {
+            color: #4a6baf;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .info {
+            background-color: #e9f5ff;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #4a6baf;
+        }
+        .api-link {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #333;
+            transition: background-color 0.2s;
+        }
+        .api-link:hover {
+            background-color: #e0e0e0;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PharmaLearn API</h1>
+        
+        <div class="card">
+            <h2>Bienvenue sur l'API de PharmaLearn</h2>
+            <p>Cette API fournit les services backend pour l'application PharmaLearn, une plateforme de formation pharmaceutique.</p>
+            
+            <div class="info">
+                <h3>Points d'entrée API principaux :</h3>
+                <a href="/api" class="api-link">/api - Documentation API</a>
+                <a href="/api/login" class="api-link">/api/login - Authentification</a>
+                <a href="/api/register" class="api-link">/api/register - Inscription</a>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>Ressources disponibles</h3>
+            <ul>
+                <li>Gestion des utilisateurs (administrateurs, formateurs, apprenants)</li>
+                <li>Gestion des cours et des quiz</li>
+                <li>Suivi de progression des apprenants</li>
+                <li>Système de messagerie</li>
+                <li>Gestion des réclamations</li>
+                <li>Génération de certificats</li>
+            </ul>
+        </div>
+        
+        <div class="card">
+            <h3>Test de connexion</h3>
+            <p>Le serveur backend est correctement configuré et fonctionne.</p>
+            <p>Vous pouvez également tester la page <a href="/test.html">test.html</a> pour vérifier le fonctionnement des fichiers statiques.</p>
+        </div>
+        
+        <div class="footer">
+            <p>PharmaLearn API - Version 1.0</p>
+            <p>Pour accéder à l'application frontend, visitez <a href="http://localhost:5173">http://localhost:5173</a></p>
+        </div>
+    </div>
+</body>
+</html>
