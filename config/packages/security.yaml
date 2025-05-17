@@ -23,6 +23,12 @@ security:
     register:
       pattern: ^/api/register
       security: false
+    password_reset:
+      pattern: ^/api/(forgot-password|reset-password)
+      security: false
+    ollama_test:
+      pattern: ^/api/chatbot/test-ollama
+      security: false
     api:
       pattern: ^/api
       stateless: true
@@ -38,6 +44,12 @@ security:
   access_control:
     - { path: ^/api/login, roles: PUBLIC_ACCESS }
     - { path: ^/api/register, roles: PUBLIC_ACCESS }
+    - { path: ^/api/forgot-password, roles: PUBLIC_ACCESS }
+    - { path: ^/api/reset-password, roles: PUBLIC_ACCESS }
+    - { path: ^/api/chatbot/test-ollama, roles: PUBLIC_ACCESS }
+    - { path: ^/api/chatbot/message-extended, roles: PUBLIC_ACCESS }
+    - { path: ^/api/chatbot/history-extended, roles: PUBLIC_ACCESS }
+    - { path: ^/api/chatbot/test-endpoint, roles: PUBLIC_ACCESS }
     - { path: ^/api/admin, roles: ROLE_ADMINISTRATEUR }
     - { path: ^/api/formateur, roles: ROLE_FORMATEUR }
     - { path: ^/api/apprenant, roles: ROLE_APPRENANT }

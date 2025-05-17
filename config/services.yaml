@@ -5,6 +5,9 @@
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
   app.mailer_sender: "tansimdaham@gmail.com"
+  app.openai_api_key: "%env(OPENAI_API_KEY)%"
+  app.ollama_api_url: "http://127.0.0.1:11434"
+  app.ollama_model: "mistral"
 
 services:
   # default configuration for services in *this* file
@@ -20,6 +23,17 @@ services:
       - "../src/DependencyInjection/"
       - "../src/Entity/"
       - "../src/Kernel.php"
+
+  # Utiliser OllamaChatbotService au lieu de ChatbotService
+  App\Service\ChatbotService:
+    class: App\Service\OllamaChatbotService
+    arguments:
+      $httpClient: "@http_client"
+      $entityManager: "@doctrine.orm.entity_manager"
+      $chatbotConversationRepository: '@App\Repository\ChatbotConversationRepository'
+      $logger: "@monolog.logger.chatbot"
+      $params: "@parameter_bag"
+      $chatbotLogger: '@App\Service\ChatbotLoggerService'
 
   # add more service definitions when explicit configuration is needed
   # please note that last definitions always *replace* previous ones

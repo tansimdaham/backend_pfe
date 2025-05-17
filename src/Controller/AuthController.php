@@ -793,4 +793,110 @@ class AuthController extends AbstractController
     }
 
 
+    #[Route('/forgot-password', name: 'api_forgot_password', methods: ['POST', 'OPTIONS'])]
+    public function forgotPassword(Request $request, EmailService $emailService): JsonResponse
+    {
+        if ($request->getMethod() === 'OPTIONS') {
+            return $this->json([], Response::HTTP_OK);
+        }
+
+        try {
+            $data = json_decode($request->getContent(), true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return $this->json([
+                    'message' => 'JSON invalide: ' . json_last_error_msg()
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            if (!isset($data['email']) || empty($data['email'])) {
+                return $this->json(['message' => 'Email requis'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $user = $this->utilisateurRepository->findByEmail($data['email']);
+            if (!$user) {
+                // Pour des raisons de sécurité, ne pas révéler si l'email existe ou non
+                return $this->json([
+                    'message' => 'Si votre email est associé à un compte, vous recevrez un lien de réinitialisation de mot de passe.'
+                ], Response::HTTP_OK);
+            }
+
+            // Générer un token de réinitialisation
+            $resetToken = bin2hex(random_bytes(32));
+            $expiresAt = new \DateTime('+1 hour');
+
+            // Stocker le token dans la base de données
+            $user->setResetToken($resetToken);
+            $user->setResetTokenExpiresAt($expiresAt);
+            $this->entityManager->flush();
+
+            // Envoyer l'email de réinitialisation
+            try {
+                $emailService->sendPasswordResetEmail($user, $resetToken);
+            } catch (\Exception $emailError) {
+                // Continuer même si l'envoi d'email échoue
+                error_log('Erreur lors de l\'envoi de l\'email de réinitialisation: ' . $emailError->getMessage());
+            }
+
+            return $this->json([
+                'message' => 'Si votre email est associé à un compte, vous recevrez un lien de réinitialisation de mot de passe.'
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return $this->json([
+                'message' => 'Erreur serveur: ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/reset-password/{token}', name: 'api_reset_password', methods: ['POST', 'OPTIONS'])]
+    public function resetPassword(Request $request, string $token): JsonResponse
+    {
+        if ($request->getMethod() === 'OPTIONS') {
+            return $this->json([], Response::HTTP_OK);
+        }
+
+        try {
+            $data = json_decode($request->getContent(), true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return $this->json([
+                    'message' => 'JSON invalide: ' . json_last_error_msg()
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            if (!isset($data['password']) || empty($data['password'])) {
+                return $this->json(['message' => 'Nouveau mot de passe requis'], Response::HTTP_BAD_REQUEST);
+            }
+
+            // Rechercher l'utilisateur par token
+            $user = $this->utilisateurRepository->findOneBy(['resetToken' => $token]);
+            if (!$user) {
+                return $this->json(['message' => 'Token invalide ou expiré'], Response::HTTP_BAD_REQUEST);
+            }
+
+            // Vérifier si le token a expiré
+            $now = new \DateTime();
+            if ($user->getResetTokenExpiresAt() < $now) {
+                return $this->json(['message' => 'Token expiré. Veuillez demander un nouveau lien de réinitialisation.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            // Mettre à jour le mot de passe
+            $hashedPassword = $this->passwordHasher->hashPassword($user, $data['password']);
+            $user->setPassword($hashedPassword);
+
+            // Effacer le token de réinitialisation
+            $user->setResetToken(null);
+            $user->setResetTokenExpiresAt(null);
+
+            $this->entityManager->flush();
+
+            return $this->json([
+                'message' => 'Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.'
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return $this->json([
+                'message' => 'Erreur serveur: ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

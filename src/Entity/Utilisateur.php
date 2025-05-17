@@ -60,6 +60,12 @@ abstract class Utilisateur implements UserInterface, PasswordAuthenticatedUserIn
     #[Groups(['user:read', 'reclamation:read'])]
     private bool $isApproved = false;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $resetToken = null;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $resetTokenExpiresAt = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -223,6 +229,30 @@ abstract class Utilisateur implements UserInterface, PasswordAuthenticatedUserIn
     public function setIsApproved(bool $isApproved): static
     {
         $this->isApproved = $isApproved;
+
+        return $this;
+    }
+
+    public function getResetToken(): ?string
+    {
+        return $this->resetToken;
+    }
+
+    public function setResetToken(?string $resetToken): static
+    {
+        $this->resetToken = $resetToken;
+
+        return $this;
+    }
+
+    public function getResetTokenExpiresAt(): ?\DateTimeInterface
+    {
+        return $this->resetTokenExpiresAt;
+    }
+
+    public function setResetTokenExpiresAt(?\DateTimeInterface $resetTokenExpiresAt): static
+    {
+        $this->resetTokenExpiresAt = $resetTokenExpiresAt;
 
         return $this;
     }

@@ -29,26 +29,99 @@ class DashboardController extends AbstractController
         private Security $security
     ) {}
 
+    #[Route('/test-pending-users', name: 'api_test_pending_users', methods: ['GET'])]
+    public function testPendingUsers(): JsonResponse
+    {
+        try {
+            // Vérifier le nombre d'utilisateurs en attente avec le repository
+            $pendingUsers = $this->utilisateurRepository->count(['isApproved' => false]);
+
+            // Vérifier directement avec une requête SQL pour confirmer
+            $conn = $this->entityManager->getConnection();
+            $sql = "SELECT COUNT(*) as count FROM utilisateur WHERE is_approved = 0";
+            $stmt = $conn->prepare($sql);
+            $result = $stmt->executeQuery();
+            $pendingUsersSQL = $result->fetchOne();
+
+            // Récupérer la liste des utilisateurs en attente pour vérification
+            $pendingUsersList = $this->utilisateurRepository->findBy(['isApproved' => false]);
+            $pendingUsersDetails = [];
+
+            foreach ($pendingUsersList as $user) {
+                $pendingUsersDetails[] = [
+                    'id' => $user->getId(),
+                    'name' => $user->getName(),
+                    'email' => $user->getEmail(),
+                    'role' => $user->getRole(),
+                    'isApproved' => $user->isApproved()
+                ];
+            }
+
+            return $this->json([
+                'pendingUsersCount' => $pendingUsers,
+                'pendingUsersSQLCount' => $pendingUsersSQL,
+                'pendingUsersDetails' => $pendingUsersDetails
+            ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'error' => 'Server error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     #[Route('/stats', name: 'api_dashboard_stats', methods: ['GET'])]
     public function getStats(): JsonResponse
     {
         try {
+            error_log('=== DÉBUT getStats() pour le dashboard administrateur ===');
+
             // Récupérer les statistiques générales
             $totalUsers = $this->utilisateurRepository->count(['isApproved' => true]);
+            error_log("Nombre total d'utilisateurs approuvés: $totalUsers");
+
             $totalApprenants = $this->utilisateurRepository->count(['role' => 'apprenant', 'isApproved' => true]);
+            error_log("Nombre total d'apprenants approuvés: $totalApprenants");
+
             $totalCourses = $this->coursRepository->count([]);
             $totalQuizzes = $this->quizRepository->count([]);
             $totalEvaluations = $this->evaluationRepository->count([]);
             $pendingEvaluations = $this->evaluationRepository->count(['StatutEvaluation' => null]);
+
+            // Vérifier le nombre d'utilisateurs en attente
+            $pendingUsers = $this->utilisateurRepository->count(['isApproved' => false]);
+            error_log("Nombre d'utilisateurs en attente d'approbation: $pendingUsers");
+
+            // Vérifier directement avec une requête SQL pour confirmer
+            $conn = $this->entityManager->getConnection();
+            $sql = "SELECT COUNT(*) as count FROM utilisateur WHERE is_approved = 0";
+            $stmt = $conn->prepare($sql);
+            $result = $stmt->executeQuery();
+            $pendingUsersSQL = $result->fetchOne();
+            error_log("Nombre d'utilisateurs en attente (SQL direct): $pendingUsersSQL");
+
             $totalCertificats = $this->certificatRepository->count([]);
 
-            // Calculer les taux de croissance (simulés pour l'instant)
-            $userGrowth = 15;
-            $courseGrowth = 25;
-            $quizGrowth = 12;
-            $evaluationGrowth = 19;
-            $pendingEvaluationGrowth = -5;
-            $certificatGrowth = 20;
+            // Calculer les taux de croissance basés sur les données réelles
+            // Récupérer les statistiques du mois précédent pour calculer la croissance
+            $lastMonthUsers = $this->getLastMonthCount('utilisateur', ['isApproved' => true]);
+            $lastMonthApprenants = $this->getLastMonthCount('utilisateur', ['role' => 'apprenant', 'isApproved' => true]);
+            $lastMonthCourses = $this->getLastMonthCount('cours');
+            $lastMonthQuizzes = $this->getLastMonthCount('quiz');
+            $lastMonthEvaluations = $this->getLastMonthCount('evaluation');
+            $lastMonthPendingEvaluations = $this->getLastMonthCount('evaluation', ['StatutEvaluation' => null]);
+            $lastMonthPendingUsers = $this->getLastMonthCount('utilisateur', ['isApproved' => false]);
+            $lastMonthCertificats = $this->getLastMonthCount('certificat');
+
+            // Calculer les taux de croissance
+            $userGrowth = $this->calculateGrowthRate($lastMonthUsers, $totalUsers);
+            $apprenantGrowth = $this->calculateGrowthRate($lastMonthApprenants, $totalApprenants);
+            $courseGrowth = $this->calculateGrowthRate($lastMonthCourses, $totalCourses);
+            $quizGrowth = $this->calculateGrowthRate($lastMonthQuizzes, $totalQuizzes);
+            $evaluationGrowth = $this->calculateGrowthRate($lastMonthEvaluations, $totalEvaluations);
+            $pendingEvaluationGrowth = $this->calculateGrowthRate($lastMonthPendingEvaluations, $pendingEvaluations);
+            $pendingUserGrowth = $this->calculateGrowthRate($lastMonthPendingUsers, $pendingUsers);
+            $certificatGrowth = $this->calculateGrowthRate($lastMonthCertificats, $totalCertificats);
 
             // Récupérer la répartition des utilisateurs par rôle
             $userDistribution = [
@@ -66,15 +139,39 @@ class DashboardController extends AbstractController
             // Récupérer les évaluations récentes
             $recentEvaluations = $this->getRecentEvaluations();
 
+            // Convertir explicitement les valeurs en entiers pour éviter les problèmes de type
+            $pendingUsers = (int)$pendingUsers;
+            error_log("Valeur finale de pendingUsers (après conversion): $pendingUsers");
+
+            // Vérifier si la valeur est correcte, sinon la forcer à 1 pour le débogage
+            // Récupérer directement le nombre d'utilisateurs en attente avec une requête SQL
+            $conn = $this->entityManager->getConnection();
+            $sql = "SELECT COUNT(*) as count FROM utilisateur WHERE is_approved = 0";
+            $stmt = $conn->prepare($sql);
+            $result = $stmt->executeQuery();
+            $pendingUsersSQL = (int)$result->fetchOne();
+
+            // Si la valeur SQL est différente de la valeur du repository, utiliser la valeur SQL
+            if ($pendingUsersSQL !== $pendingUsers) {
+                error_log("Différence entre SQL ($pendingUsersSQL) et Repository ($pendingUsers)");
+                $pendingUsers = $pendingUsersSQL;
+            }
+
+            // Forcer la valeur de pendingUsers pour tester
+            $pendingUsersValue = $pendingUsers;
+            error_log("Valeur forcée pour pendingUsers: $pendingUsersValue");
+
             return $this->json([
+                'debug_pendingUsers' => $pendingUsersValue, // Ajouter une valeur de débogage directement à la racine
                 'stats' => [
-                    'totalUsers' => ['value' => $totalUsers, 'growth' => $userGrowth],
-                    'totalApprenants' => ['value' => $totalApprenants, 'growth' => $userGrowth],
-                    'totalCourses' => ['value' => $totalCourses, 'growth' => $courseGrowth],
-                    'totalQuizzes' => ['value' => $totalQuizzes, 'growth' => $quizGrowth],
-                    'evaluationsDone' => ['value' => $totalEvaluations, 'growth' => $evaluationGrowth],
-                    'pendingEvaluations' => ['value' => $pendingEvaluations, 'growth' => $pendingEvaluationGrowth],
-                    'totalCertificats' => ['value' => $totalCertificats, 'growth' => $certificatGrowth],
+                    'totalUsers' => ['value' => (int)$totalUsers, 'growth' => $userGrowth],
+                    'totalApprenants' => ['value' => (int)$totalApprenants, 'growth' => $apprenantGrowth],
+                    'totalCourses' => ['value' => (int)$totalCourses, 'growth' => $courseGrowth],
+                    'totalQuizzes' => ['value' => (int)$totalQuizzes, 'growth' => $quizGrowth],
+                    'evaluationsDone' => ['value' => (int)$totalEvaluations, 'growth' => $evaluationGrowth],
+                    'pendingEvaluations' => ['value' => (int)$pendingEvaluations, 'growth' => $pendingEvaluationGrowth],
+                    'pendingUsers' => ['value' => $pendingUsersValue, 'growth' => $pendingUserGrowth],
+                    'totalCertificats' => ['value' => (int)$totalCertificats, 'growth' => $certificatGrowth],
                 ],
                 'userDistribution' => $userDistribution,
                 'courseStats' => $courseStats,
@@ -134,13 +231,22 @@ class DashboardController extends AbstractController
             $pendingEvaluations = $this->evaluationRepository->count(['StatutEvaluation' => null]);
             $totalCertificats = $this->certificatRepository->count([]);
 
-            // Calculer les taux de croissance (simulés pour l'instant)
-            $userGrowth = 15;
-            $courseGrowth = 25;
-            $quizGrowth = 12;
-            $evaluationGrowth = 19;
-            $pendingEvaluationGrowth = -5;
-            $certificatGrowth = 20;
+            // Calculer les taux de croissance basés sur les données réelles
+            // Récupérer les statistiques du mois précédent pour calculer la croissance
+            $lastMonthApprenants = $this->getLastMonthCount('utilisateur', ['role' => 'apprenant', 'isApproved' => true]);
+            $lastMonthCourses = $this->getLastMonthCount('cours');
+            $lastMonthQuizzes = $this->getLastMonthCount('quiz');
+            $lastMonthEvaluations = $this->getLastMonthCount('evaluation');
+            $lastMonthPendingEvaluations = $this->getLastMonthCount('evaluation', ['StatutEvaluation' => null]);
+            $lastMonthCertificats = $this->getLastMonthCount('certificat');
+
+            // Calculer les taux de croissance
+            $apprenantGrowth = $this->calculateGrowthRate($lastMonthApprenants, $totalApprenants);
+            $courseGrowth = $this->calculateGrowthRate($lastMonthCourses, $totalCourses);
+            $quizGrowth = $this->calculateGrowthRate($lastMonthQuizzes, $totalQuizzes);
+            $evaluationGrowth = $this->calculateGrowthRate($lastMonthEvaluations, $totalEvaluations);
+            $pendingEvaluationGrowth = $this->calculateGrowthRate($lastMonthPendingEvaluations, $pendingEvaluations);
+            $certificatGrowth = $this->calculateGrowthRate($lastMonthCertificats, $totalCertificats);
 
             // Récupérer la répartition des utilisateurs par rôle
             $userDistribution = [
@@ -166,8 +272,8 @@ class DashboardController extends AbstractController
 
             return $this->json([
                 'stats' => [
-                    'totalUsers' => ['value' => $totalApprenants, 'growth' => $userGrowth],
-                    'totalApprenants' => ['value' => $totalApprenants, 'growth' => $userGrowth],
+                    'totalUsers' => ['value' => $totalApprenants, 'growth' => $apprenantGrowth],
+                    'totalApprenants' => ['value' => $totalApprenants, 'growth' => $apprenantGrowth],
                     'totalCourses' => ['value' => $totalCourses, 'growth' => $courseGrowth],
                     'totalQuizzes' => ['value' => $totalQuizzes, 'growth' => $quizGrowth],
                     'evaluationsDone' => ['value' => $totalEvaluations, 'growth' => $evaluationGrowth],
@@ -238,16 +344,10 @@ class DashboardController extends AbstractController
 
             error_log('Nombre de cours trouvés: ' . count($cours));
 
-            // Si aucun cours n'est trouvé, retourner des données de démonstration
+            // Si aucun cours n'est trouvé, retourner un tableau vide
             if (empty($cours)) {
-                error_log('Aucun cours trouvé dans la base de données, retour de données de démonstration');
-                return [
-                    ['course' => 'Cours 1', 'evaluationCount' => 18, 'avgProgress' => 85],
-                    ['course' => 'Cours 2', 'evaluationCount' => 15, 'avgProgress' => 92],
-                    ['course' => 'Cours 3', 'evaluationCount' => 12, 'avgProgress' => 78],
-                    ['course' => 'Cours 4', 'evaluationCount' => 9, 'avgProgress' => 88],
-                    ['course' => 'Cours 5', 'evaluationCount' => 7, 'avgProgress' => 75]
-                ];
+                error_log('Aucun cours trouvé dans la base de données, retour d\'un tableau vide');
+                return [];
             }
 
             // Préparer les résultats
@@ -389,16 +489,10 @@ class DashboardController extends AbstractController
                 }
             }
 
-            // Si aucun résultat n'a été généré, retourner des données de démonstration
+            // Si aucun résultat n'a été généré, retourner un tableau vide
             if (empty($results)) {
-                error_log('Aucun résultat généré à partir des cours, retour de données de démonstration');
-                return [
-                    ['course' => 'Cours 1', 'evaluationCount' => 18, 'avgProgress' => 85],
-                    ['course' => 'Cours 2', 'evaluationCount' => 15, 'avgProgress' => 92],
-                    ['course' => 'Cours 3', 'evaluationCount' => 12, 'avgProgress' => 78],
-                    ['course' => 'Cours 4', 'evaluationCount' => 9, 'avgProgress' => 88],
-                    ['course' => 'Cours 5', 'evaluationCount' => 7, 'avgProgress' => 75]
-                ];
+                error_log('Aucun résultat généré à partir des cours, retour d\'un tableau vide');
+                return [];
             }
 
             // Vérifier si nous avons des données significatives
@@ -470,28 +564,16 @@ class DashboardController extends AbstractController
 
             // Vérifier si le tableau final est vide (ce qui ne devrait pas arriver à ce stade)
             if (empty($cleanResults)) {
-                error_log('ATTENTION: Le tableau final est vide, retour de données de démonstration');
-                return [
-                    ['course' => 'Cours 1', 'evaluationCount' => 18, 'avgProgress' => 85],
-                    ['course' => 'Cours 2', 'evaluationCount' => 15, 'avgProgress' => 92],
-                    ['course' => 'Cours 3', 'evaluationCount' => 12, 'avgProgress' => 78],
-                    ['course' => 'Cours 4', 'evaluationCount' => 9, 'avgProgress' => 88],
-                    ['course' => 'Cours 5', 'evaluationCount' => 7, 'avgProgress' => 75]
-                ];
+                error_log('ATTENTION: Le tableau final est vide, retour d\'un tableau vide');
+                return [];
             }
 
             error_log('Résultats finaux après amélioration: ' . json_encode($cleanResults));
 
             // Vérification finale pour s'assurer que nous avons des données
             if (empty($cleanResults)) {
-                error_log('ATTENTION: Le tableau final est toujours vide après toutes les vérifications, retour de données de démonstration');
-                return [
-                    ['course' => 'Cours 1', 'evaluationCount' => 18, 'avgProgress' => 85],
-                    ['course' => 'Cours 2', 'evaluationCount' => 15, 'avgProgress' => 92],
-                    ['course' => 'Cours 3', 'evaluationCount' => 12, 'avgProgress' => 78],
-                    ['course' => 'Cours 4', 'evaluationCount' => 9, 'avgProgress' => 88],
-                    ['course' => 'Cours 5', 'evaluationCount' => 7, 'avgProgress' => 75]
-                ];
+                error_log('ATTENTION: Le tableau final est toujours vide après toutes les vérifications, retour d\'un tableau vide');
+                return [];
             }
 
             return $cleanResults;
@@ -499,41 +581,9 @@ class DashboardController extends AbstractController
             error_log('Error in getCourseStats: ' . $e->getMessage());
             error_log('Stack trace: ' . $e->getTraceAsString());
 
-            // En cas d'erreur grave, essayer de récupérer les noms des cours réels
-            try {
-                $conn = $this->entityManager->getConnection();
-                $coursQuery = "SELECT id, titre FROM cours ORDER BY id LIMIT 5";
-                $coursStmt = $conn->prepare($coursQuery);
-                $coursResult = $coursStmt->executeQuery();
-                $cours = $coursResult->fetchAllAssociative();
-
-                if (!empty($cours)) {
-                    $demoData = [];
-                    foreach ($cours as $index => $c) {
-                        $demoData[] = [
-                            'course' => $c['titre'],
-                            'evaluationCount' => 20 - $index * 3, // 20, 17, 14, 11, 8
-                            'avgProgress' => 95 - $index * 5 // 95, 90, 85, 80, 75
-                        ];
-                    }
-                    error_log('Retour de données de démonstration avec cours réels suite à une erreur');
-                    return $demoData;
-                }
-            } catch (\Exception $innerException) {
-                error_log('Erreur lors de la récupération des cours pour les données de démonstration: ' . $innerException->getMessage());
-            }
-
-            // Fallback avec des noms génériques
-            $demoData = [
-                ['course' => 'Cours 1', 'evaluationCount' => 18, 'avgProgress' => 85],
-                ['course' => 'Cours 2', 'evaluationCount' => 15, 'avgProgress' => 92],
-                ['course' => 'Cours 3', 'evaluationCount' => 12, 'avgProgress' => 78],
-                ['course' => 'Cours 4', 'evaluationCount' => 9, 'avgProgress' => 88],
-                ['course' => 'Cours 5', 'evaluationCount' => 7, 'avgProgress' => 75]
-            ];
-
-            error_log('Retour de données de démonstration génériques suite à une erreur');
-            return $demoData;
+            // En cas d'erreur, retourner un tableau vide
+            error_log('Retour d\'un tableau vide suite à une erreur');
+            return [];
         }
     }
 
@@ -554,17 +604,10 @@ class DashboardController extends AbstractController
 
             error_log("Nombre total d'évaluations dans la base de données: $evaluationCount");
 
-            // Si aucune évaluation n'existe, créer des données simulées
+            // Si aucune évaluation n'existe, retourner un tableau vide
             if ($evaluationCount == 0) {
-                error_log('Aucune évaluation trouvée, génération de données simulées');
-
-                // Générer des données pour les 6 derniers mois
-                $data = $this->generateSimulatedEvaluationTrend();
-
-                // Essayer de créer des évaluations réelles pour les prochaines requêtes
-                $this->createSampleEvaluations($conn);
-
-                return $data;
+                error_log('Aucune évaluation trouvée, retour d\'un tableau vide');
+                return [];
             }
 
             // Requête SQL améliorée pour obtenir le nombre d'évaluations par mois et par statut pour les 6 derniers mois
@@ -695,10 +738,10 @@ class DashboardController extends AbstractController
                 error_log('Nombre de mois avec données d\'évaluation (requête simple après erreur): ' . count($results));
             }
 
-            // Si aucun résultat n'est trouvé, générer des données pour tous les 6 derniers mois
+            // Si aucun résultat n'est trouvé, retourner un tableau vide
             if (empty($results)) {
-                error_log('Aucun résultat trouvé, génération de données pour les 6 derniers mois');
-                return $this->generateSimulatedEvaluationTrend();
+                error_log('Aucun résultat trouvé, retour d\'un tableau vide');
+                return [];
             }
 
             // Vérifier si nous avons des données pour tous les 6 derniers mois
@@ -746,57 +789,9 @@ class DashboardController extends AbstractController
             error_log('Error in getEvaluationTrend: ' . $e->getMessage());
             error_log('Stack trace: ' . $e->getTraceAsString());
 
-            // En cas d'erreur, retourner des données simulées
-            return $this->generateSimulatedEvaluationTrend();
+            // En cas d'erreur, retourner un tableau vide
+            return [];
         }
-    }
-
-    /**
-     * Génère des données simulées pour la tendance des évaluations
-     * @return array Données simulées pour les 6 derniers mois
-     */
-    private function generateSimulatedEvaluationTrend(): array
-    {
-        $data = [];
-        $monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
-
-        // Obtenir les 6 derniers mois
-        $currentMonth = (int)date('n'); // 1-12
-
-        for ($i = 5; $i >= 0; $i--) {
-            $monthIndex = ($currentMonth - $i - 1 + 12) % 12; // Assurer que l'index est entre 0 et 11
-            $monthName = $monthNames[$monthIndex];
-
-            // Générer un nombre d'évaluations qui suit une tendance croissante
-            // Plus proche du mois actuel, plus le nombre est élevé
-            $baseValue = 100 + ($i * 50); // 100, 150, 200, 250, 300, 350
-            $randomFactor = rand(-30, 50); // Ajouter un peu de variation
-            $evaluations = $baseValue + $randomFactor;
-
-            // Répartir les évaluations entre satisfaisantes et non satisfaisantes
-            // Avec une tendance à avoir plus d'évaluations satisfaisantes (environ 70%)
-            $satisfaisantRatio = rand(65, 75) / 100; // Entre 65% et 75%
-            $satisfaisant = round($evaluations * $satisfaisantRatio);
-            $nonSatisfaisant = $evaluations - $satisfaisant;
-
-            // Générer des nombres aléatoires pour les formateurs, apprenants et quiz
-            $formateurs = rand(3, 8); // Entre 3 et 8 formateurs différents
-            $apprenants = rand(10, 30); // Entre 10 et 30 apprenants différents
-            $quiz = rand(5, 15); // Entre 5 et 15 quiz différents
-
-            $data[] = [
-                'month' => $monthName,
-                'evaluations' => $evaluations,
-                'satisfaisant' => $satisfaisant,
-                'nonSatisfaisant' => $nonSatisfaisant,
-                'formateurs' => $formateurs,
-                'apprenants' => $apprenants,
-                'quiz' => $quiz
-            ];
-        }
-
-        error_log('Données simulées générées: ' . json_encode($data));
-        return $data;
     }
 
     /**
@@ -862,37 +857,65 @@ class DashboardController extends AbstractController
             if (isset($existingMonths[$key])) {
                 $completeData[] = $existingMonths[$key];
             } else {
-                // Sinon, créer une entrée avec des données simulées
+                // Sinon, créer une entrée vide pour ce mois
                 $monthName = $monthNames[$targetMonth - 1];
-
-                // Générer un nombre d'évaluations qui suit une tendance croissante
-                $baseValue = 50 + ($i * 30); // 50, 80, 110, 140, 170, 200
-                $randomFactor = rand(-20, 30); // Ajouter un peu de variation
-                $evaluations = $baseValue + $randomFactor;
-
-                // Répartir les évaluations entre satisfaisantes et non satisfaisantes
-                $satisfaisantRatio = rand(65, 75) / 100; // Entre 65% et 75%
-                $satisfaisant = round($evaluations * $satisfaisantRatio);
-                $nonSatisfaisant = $evaluations - $satisfaisant;
-
-                // Générer des nombres aléatoires pour les formateurs, apprenants et quiz
-                $formateurs = rand(3, 8); // Entre 3 et 8 formateurs différents
-                $apprenants = rand(10, 30); // Entre 10 et 30 apprenants différents
-                $quiz = rand(5, 15); // Entre 5 et 15 quiz différents
-
                 $completeData[] = [
                     'month' => $monthName,
-                    'evaluations' => $evaluations,
-                    'satisfaisant' => $satisfaisant,
-                    'nonSatisfaisant' => $nonSatisfaisant,
-                    'formateurs' => $formateurs,
-                    'apprenants' => $apprenants,
-                    'quiz' => $quiz
+                    'evaluations' => 0,
+                    'satisfaisant' => 0,
+                    'nonSatisfaisant' => 0
                 ];
             }
         }
 
         return $completeData;
+    }
+
+    /**
+     * Récupère le nombre d'enregistrements d'une table pour le mois précédent
+     * @param string $table Nom de la table
+     * @param array $criteria Critères de filtrage (optionnel)
+     * @return int Nombre d'enregistrements
+     */
+    private function getLastMonthCount(string $table, array $criteria = []): int
+    {
+        try {
+            $conn = $this->entityManager->getConnection();
+
+            // Construire la requête SQL de base
+            $sql = "SELECT COUNT(*) FROM $table WHERE created_at <= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)";
+
+            // Ajouter les critères de filtrage si nécessaire
+            $params = [];
+            if (!empty($criteria)) {
+                foreach ($criteria as $field => $value) {
+                    $sql .= " AND $field = ?";
+                    $params[] = $value;
+                }
+            }
+
+            $stmt = $conn->prepare($sql);
+            $result = $stmt->executeQuery($params);
+            return (int)$result->fetchOne() ?: 0;
+        } catch (\Exception $e) {
+            error_log('Error in getLastMonthCount: ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Calcule le taux de croissance entre deux valeurs
+     * @param int $oldValue Ancienne valeur
+     * @param int $newValue Nouvelle valeur
+     * @return int Taux de croissance en pourcentage
+     */
+    private function calculateGrowthRate(int $oldValue, int $newValue): int
+    {
+        if ($oldValue == 0) {
+            return $newValue > 0 ? 100 : 0; // Si l'ancienne valeur est 0, la croissance est de 100% s'il y a des données maintenant
+        }
+
+        return (int)round((($newValue - $oldValue) / $oldValue) * 100);
     }
 
     /**
@@ -1327,15 +1350,9 @@ class DashboardController extends AbstractController
                     }
                 }
 
-                // Si nous n'avons pas pu créer ou récupérer de vraies évaluations, utiliser des données simulées
-                error_log('Impossible de créer ou récupérer de vraies évaluations, utilisation de données simulées');
-                return [
-                    ['id' => 1, 'apprenant' => 'Ahmed Ben Ali', 'cours' => 'Pharmacologie', 'status' => 'Satisfaisant', 'date' => '2023-05-15'],
-                    ['id' => 2, 'apprenant' => 'Fatma Ksouri', 'cours' => 'Anatomie', 'status' => 'Non Satisfaisant', 'date' => '2023-05-14'],
-                    ['id' => 3, 'apprenant' => 'Mohamed Trabelsi', 'cours' => 'Biologie', 'status' => 'Satisfaisant', 'date' => '2023-05-14'],
-                    ['id' => 4, 'apprenant' => 'Samira Ben Ahmed', 'cours' => 'Chirurgie', 'status' => 'Satisfaisant', 'date' => '2023-05-13'],
-                    ['id' => 5, 'apprenant' => 'Karim Jlassi', 'cours' => 'Pharmacologie', 'status' => 'Non Satisfaisant', 'date' => '2023-05-12'],
-                ];
+                // Si nous n'avons pas pu créer ou récupérer de vraies évaluations, retourner un tableau vide
+                error_log('Impossible de créer ou récupérer de vraies évaluations, retour d\'un tableau vide');
+                return [];
             }
 
             // Formater les résultats pour le frontend
@@ -1524,14 +1541,9 @@ class DashboardController extends AbstractController
                 error_log('Error in fallback data generation: ' . $innerException->getMessage());
             }
 
-            // Si tout échoue, retourner des données entièrement simulées
-            return [
-                ['id' => 1, 'apprenant' => 'Ahmed Ben Ali', 'cours' => 'Pharmacologie', 'status' => 'Satisfaisant', 'date' => '2023-05-15'],
-                ['id' => 2, 'apprenant' => 'Fatma Ksouri', 'cours' => 'Anatomie', 'status' => 'Non Satisfaisant', 'date' => '2023-05-14'],
-                ['id' => 3, 'apprenant' => 'Mohamed Trabelsi', 'cours' => 'Biologie', 'status' => 'Satisfaisant', 'date' => '2023-05-14'],
-                ['id' => 4, 'apprenant' => 'Samira Ben Ahmed', 'cours' => 'Chirurgie', 'status' => 'Satisfaisant', 'date' => '2023-05-13'],
-                ['id' => 5, 'apprenant' => 'Karim Jlassi', 'cours' => 'Pharmacologie', 'status' => 'Non Satisfaisant', 'date' => '2023-05-12'],
-            ];
+            // Si tout échoue, retourner un tableau vide
+            error_log('Toutes les tentatives ont échoué, retour d\'un tableau vide');
+            return [];
         }
     }
 }

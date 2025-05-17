@@ -287,3 +287,35 @@ api_dashboard_formateur_stats:
   path: /api/dashboard/formateur/stats
   methods: ["GET"]
   controller: App\Controller\DashboardController::getFormateurStats
+
+api_test_pending_users:
+  path: /api/dashboard/test-pending-users
+  methods: ["GET"]
+  controller: App\Controller\DashboardController::testPendingUsers
+
+# Password Reset routes
+api_forgot_password:
+  path: /api/forgot-password
+  methods: ["POST"]
+  controller: App\Controller\AuthController::forgotPassword
+
+api_reset_password:
+  path: /api/reset-password/{token}
+  methods: ["POST"]
+  controller: App\Controller\AuthController::resetPassword
+
+# Chatbot routes
+api_chatbot_message:
+  path: /api/chatbot/message
+  methods: ["POST"]
+  controller: App\Controller\ChatbotController::sendMessage
+
+api_chatbot_history:
+  path: /api/chatbot/history
+  methods: ["GET"]
+  controller: App\Controller\ChatbotController::getHistory
+
+api_chatbot_clear_history:
+  path: /api/chatbot/history/clear
+  methods: ["POST"]
+  controller: App\Controller\ChatbotController::clearHistory
